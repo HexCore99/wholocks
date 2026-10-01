@@ -1,0 +1,8 @@
+[package]
+name = "wholocks"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+restart-manager = "0.1.0"
+walkdir = "2.5.0"

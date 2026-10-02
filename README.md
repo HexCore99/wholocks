@@ -15,11 +15,49 @@ cargo run -- "C:\Users\HExCR\Documents\Prog\Svelte\auth-system"
 The program prints the executable path, PID, and the exact handle path for each
 matching process.
 
-## Build a release executable
+## Build the release executables
 
 ```powershell
-cargo build --release
+cargo build --release --bins
 .\target\release\wholocks.exe "C:\Users\HExCR\Documents\Prog\Svelte\auth-system"
+```
+
+The build creates two programs:
+
+- `wholocks.exe` is the command-line tool.
+- `wholocks-gui.exe` is the GPUI window used by File Explorer.
+
+## Add WhoLocks to File Explorer
+
+Build the release executables, then register the context-menu command for your
+Windows user:
+
+```powershell
+.\scripts\install-shell-verb.ps1
+```
+
+This creates
+`HKCU\Software\Classes\AllFilesystemObjects\shell\WhoLocks` and directly runs
+`wholocks-gui.exe "%1"`. Administrator privileges are not required.
+
+Right-click one file or folder and choose **Show more options > WhoLocks**.
+The window shows one row per locking PID, with `End Task` on each row and
+`End All Tasks` in the top-right. Termination always asks for confirmation.
+
+The registration points to the current release directory. Do not move or delete
+the two executables after installing the menu. To remove the menu:
+
+```powershell
+.\scripts\uninstall-shell-verb.ps1
+```
+
+The equivalent built-in commands are `wholocks.exe --install-context-menu` and
+`wholocks.exe --uninstall-context-menu`.
+
+You can also open the UI directly:
+
+```powershell
+.\target\release\wholocks-gui.exe "C:\path\to\some-file.txt"
 ```
 
 To check one file instead of an entire folder:

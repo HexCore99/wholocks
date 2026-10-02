@@ -113,7 +113,29 @@ impl Render for WhoLocksView {
         };
 
         let mut content = div().flex().flex_col().flex_1().min_h(px(1.0));
-        if self.loading {
+        if self.target.is_none() {
+            content = content.child(
+                div()
+                    .flex_1()
+                    .flex()
+                    .flex_col()
+                    .items_center()
+                    .justify_center()
+                    .gap_2()
+                    .child(
+                        div()
+                            .text_lg()
+                            .text_color(rgb(0x111827))
+                            .child("WhoLocks is ready"),
+                    )
+                    .child(
+                        div()
+                            .text_sm()
+                            .text_color(rgb(0x6b7280))
+                            .child("Right-click a file or folder and choose WhoLocks."),
+                    ),
+            );
+        } else if self.loading {
             content = content.child(
                 div()
                     .flex_1()
@@ -190,50 +212,58 @@ impl Render for WhoLocksView {
                 );
         }
 
-        let mut root =
-            div()
-                .size_full()
-                .flex()
-                .flex_col()
-                .gap_4()
-                .p_5()
-                .bg(rgb(0xf8fafc))
-                .text_color(rgb(0x111827))
-                .child(
-                    div()
-                        .flex()
-                        .items_start()
-                        .justify_between()
-                        .gap_4()
-                        .child(
-                            div()
-                                .flex()
-                                .flex_col()
-                                .flex_1()
-                                .min_w(px(1.0))
-                                .gap_1()
-                                .child(div().text_2xl().child("Who locks this?"))
-                                .child(
-                                    div()
-                                        .text_sm()
-                                        .text_color(rgb(0x6b7280))
-                                        .overflow_hidden()
-                                        .child(self.target.display().to_string()),
-                                ),
-                        )
-                        .child(
-                            div()
-                                .flex()
-                                .gap_2()
-                                .child(neutral_button("Refresh").id("refresh").on_click(
-                                    cx.listener(|view, _, _, cx| {
+        let mut root = div()
+            .size_full()
+            .flex()
+            .flex_col()
+            .gap_4()
+            .p_5()
+            .bg(rgb(0xf8fafc))
+            .text_color(rgb(0x111827))
+            .child(
+                div()
+                    .flex()
+                    .items_start()
+                    .justify_between()
+                    .gap_4()
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .flex_1()
+                            .min_w(px(1.0))
+                            .gap_1()
+                            .child(div().text_2xl().child("Who locks this?"))
+                            .child(
+                                div()
+                                    .text_sm()
+                                    .text_color(rgb(0x6b7280))
+                                    .overflow_hidden()
+                                    .child(
+                                        self.target
+                                            .as_ref()
+                                            .map(|target| target.display().to_string())
+                                            .unwrap_or_else(|| {
+                                                "Use the File Explorer context menu.".to_string()
+                                            }),
+                                    ),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .gap_2()
+                            .child(
+                                neutral_button("Refresh")
+                                    .id("refresh")
+                                    .on_click(cx.listener(|view, _, _, cx| {
                                         view.action_message = None;
                                         view.refresh(cx);
-                                    }),
-                                ))
-                                .child(end_all),
-                        ),
-                );
+                                    })),
+                            )
+                            .child(end_all),
+                    ),
+            );
 
         if self.inaccessible_process_count > 0 || (!self.elevated && self.needs_elevation) {
             let warning_text = if self.inaccessible_process_count > 0 {

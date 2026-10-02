@@ -4,6 +4,17 @@
 It is useful when File Explorer says that a folder or a file is in use and cannot
 be deleted or moved.
 
+## Install
+
+Download `WhoLocks-Setup-v0.9.0.exe` from the
+[latest GitHub release](https://github.com/HexCore99/wholocks/releases/latest),
+run it, then right-click any file or folder and choose **WhoLocks**. The installer
+is per-user and does not require administrator privileges. On Windows 11, use
+**Show more options > WhoLocks** if it is not in the modern menu.
+
+Windows may show a SmartScreen warning because this open-source installer is not
+code-signed.
+
 ## Run from source
 
 From this project folder, scan a file or folder:

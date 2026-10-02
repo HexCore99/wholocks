@@ -11,11 +11,12 @@ use crate::{LockingProcess, find_locks, is_elevated, relaunch_elevated, terminat
 
 const ERROR_ACCESS_DENIED: i32 = 5;
 
-pub fn run(target: PathBuf) {
+pub fn run(target: Option<PathBuf>) {
     Application::new().run(move |cx: &mut App| {
         let bounds = Bounds::centered(None, size(px(780.0), px(520.0)), cx);
         let title = target
-            .file_name()
+            .as_ref()
+            .and_then(|target| target.file_name())
             .and_then(|name| name.to_str())
             .map(|name| format!("WhoLocks — {name}"))
             .unwrap_or_else(|| "WhoLocks".to_string());
@@ -33,7 +34,9 @@ pub fn run(target: PathBuf) {
             move |_, cx| {
                 cx.new(|cx| {
                     let mut view = WhoLocksView::new(target, is_elevated());
-                    view.refresh(cx);
+                    if view.target.is_some() {
+                        view.refresh(cx);
+                    }
                     view
                 })
             },
@@ -46,7 +49,7 @@ pub fn run(target: PathBuf) {
 }
 
 pub(crate) struct WhoLocksView {
-    target: PathBuf,
+    target: Option<PathBuf>,
     processes: Vec<LockingProcess>,
     inaccessible_process_count: usize,
     loading: bool,
@@ -66,7 +69,7 @@ pub(crate) struct ActionMessage {
 }
 
 impl WhoLocksView {
-    fn new(target: PathBuf, elevated: bool) -> Self {
+    fn new(target: Option<PathBuf>, elevated: bool) -> Self {
         Self {
             target,
             processes: Vec::new(),
@@ -84,9 +87,11 @@ impl WhoLocksView {
     }
 
     pub(crate) fn refresh(&mut self, cx: &mut Context<Self>) {
+        let Some(target) = self.target.clone() else {
+            return;
+        };
         self.scan_generation = self.scan_generation.wrapping_add(1);
         let generation = self.scan_generation;
-        let target = self.target.clone();
         self.loading = true;
         self.scan_error = None;
         cx.notify();
@@ -253,7 +258,10 @@ impl WhoLocksView {
     }
 
     pub(crate) fn retry_as_administrator(&mut self, cx: &mut Context<Self>) {
-        match relaunch_elevated(&self.target) {
+        let Some(target) = self.target.as_ref() else {
+            return;
+        };
+        match relaunch_elevated(target) {
             Ok(()) => cx.quit(),
             Err(error) => {
                 self.action_message = Some(ActionMessage {

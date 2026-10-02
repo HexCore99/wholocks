@@ -1,0 +1,84 @@
+name: Release Windows installer
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup component add clippy
+
+      - name: Verify release tag
+        shell: pwsh
+        run: |
+          $manifest = Get-Content Cargo.toml -Raw
+          $version = [regex]::Match($manifest, '(?m)^version\s*=\s*"([^"]+)"').Groups[1].Value
+          if ("v$version" -ne "${{ github.ref_name }}") {
+            throw "Tag ${{ github.ref_name }} does not match Cargo version $version"
+          }
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Test
+        run: cargo test --locked --all-targets
+
+      - name: Lint
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: Build release executables
+        run: cargo build --locked --release --bins
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DMyAppVersion=$env:APP_VERSION" "installer\WhoLocks.iss"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Create checksum
+        shell: pwsh
+        run: |
+          $installer = "installer\output\WhoLocks-Setup-v$env:APP_VERSION.exe"
+          $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  WhoLocks-Setup-v$env:APP_VERSION.exe" |
+            Set-Content -NoNewline "${installer}.sha256"
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $installer = "installer\output\WhoLocks-Setup-v$env:APP_VERSION.exe"
+          $checksum = "${installer}.sha256"
+          $notes = @"
+          ## WhoLocks $env:APP_VERSION
+
+          Download **WhoLocks-Setup-v$env:APP_VERSION.exe** and run it. The installer:
+
+          - installs WhoLocks for the current Windows user;
+          - adds **WhoLocks** to the file and folder context menu;
+          - adds a Start Menu shortcut and Windows uninstaller;
+          - does not require administrator privileges.
+
+          On Windows 11, the command may initially appear under **Show more options**.
+          "@
+          $notes | Set-Content release-notes.md
+          gh release create $tag $installer $checksum --title "WhoLocks $env:APP_VERSION" --notes-file release-notes.md

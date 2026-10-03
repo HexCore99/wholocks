@@ -1,103 +1,148 @@
-# wholocks
+# WhoLocks
 
-`wholocks` finds Windows processes that have an open handle to a file or folder.
-It is useful when File Explorer says that a folder or a file is in use and cannot
-be deleted or moved.
+**Find the Windows process that is preventing you from moving, renaming, or deleting a file or folder.**
 
-## Install
+WhoLocks is a lightweight Windows utility that scans open file-system handles and shows exactly which processes are using the selected path. Use it from **File Explorer** through a convenient context-menu command, or run it directly from the command line.
 
-Download `WhoLocks-Setup-v0.9.0.exe` from the
-[latest GitHub release](https://github.com/HexCore99/wholocks/releases/latest),
-run it, then right-click any file or folder and choose **WhoLocks**. The installer
-is per-user and does not require administrator privileges. On Windows 11, use
-**Show more options > WhoLocks** if it is not in the modern menu.
+## Features
 
-Windows may show a SmartScreen warning because this open-source installer is not
-code-signed.
+- **Scan files and folders** directly from the Windows File Explorer context menu.
+- Identify each locking process by its **name, executable path, and PID**.
+- Detect handles to the selected folder and items anywhere inside it.
+- Refresh results without reopening the application.
+- End one locking process or all listed processes after a confirmation prompt.
+- Retry the scan with **administrator privileges** when Windows blocks access to protected processes.
+- Use the graphical application or the standalone command-line tool.
 
-## Run from source
+## Quick start
 
-From this project folder, scan a file or folder:
+### 1. Install WhoLocks
+
+Download **`WhoLocks-Setup-v0.9.0.exe`** from the [latest GitHub release](https://github.com/HexCore99/wholocks/releases/latest), then run the installer.
+
+**The installation is per-user and does not require administrator privileges.** Windows SmartScreen may display a warning because the installer is not code-signed.
+
+### 2. Select the locked file or folder
+
+When Windows reports that an action cannot be completed because a file or folder is open in another program, locate and select that item in File Explorer.
+
+![Windows reporting that a folder is in use](images/wholocks_1.png)
+
+### 3. Open WhoLocks
+
+Right-click the selected item and choose **WhoLocks**.
+
+> **Windows 11:** If the command is not visible in the modern context menu, choose **Show more options**, then select **WhoLocks**.
+
+![Selecting WhoLocks from the File Explorer context menu](images/wholocks_2.png)
+
+### 4. Review the locking processes
+
+WhoLocks displays every process it can identify, including the process name, executable location, PID, and number of matching handles.
+
+![WhoLocks displaying processes that are using the selected folder](images/wholocks_3.png)
+
+Whenever possible, **close the listed application normally** so it can save its work and shut down cleanly. Use **End Task** for one process or **End All Tasks** only when necessary.
+
+> [!CAUTION]
+> **Ending a task stops it immediately. Unsaved work may be lost.** Always review the listed processes before confirming.
+
+## Command-line usage
+
+Run these commands from the repository root. Replace the example path with the file or folder you want to inspect.
+
+### Scan a path
 
 ```powershell
-cargo run -- "C:\Users\HExCR\Documents\Prog\Svelte\auth-system"
+cargo run -- "C:\path\to\file-or-folder"
 ```
 
-The program prints the executable path, PID, and the exact handle path for each
-matching process.
+The command prints each matching process, its PID, and the exact handle path.
 
-## Build the release executables
+### Scan and terminate locking processes
 
 ```powershell
+cargo run -- --kill "C:\path\to\file-or-folder"
+```
+
+> [!WARNING]
+> **`--kill` forcibly terminates every distinct process found by the scan.** The affected applications do not get an opportunity to save unsaved work or clean up resources.
+
+## Build from source
+
+### Requirements
+
+- **Windows x64**
+- A current [Rust toolchain](https://www.rust-lang.org/tools/install) with the MSVC target
+- PowerShell
+
+Clone the repository and build both executables:
+
+```powershell
+git clone https://github.com/HexCore99/wholocks.git
+cd wholocks
 cargo build --release --bins
-.\target\release\wholocks.exe "C:\Users\HExCR\Documents\Prog\Svelte\auth-system"
 ```
 
-The build creates two programs:
+The build produces:
 
-- `wholocks.exe` is the command-line tool.
-- `wholocks-gui.exe` is the GPUI window used by File Explorer.
+- **`target\release\wholocks.exe`** — command-line application
+- **`target\release\wholocks-gui.exe`** — graphical File Explorer application
 
-## Add WhoLocks to File Explorer
+Run either executable directly:
 
-Build the release executables, then register the context-menu command for your
-Windows user:
+```powershell
+.\target\release\wholocks.exe "C:\path\to\file-or-folder"
+.\target\release\wholocks-gui.exe "C:\path\to\file-or-folder"
+```
+
+## Add WhoLocks to File Explorer from source
+
+After building the release executables, register the context-menu command for the current Windows user:
 
 ```powershell
 .\scripts\install-shell-verb.ps1
 ```
 
-This creates
-`HKCU\Software\Classes\AllFilesystemObjects\shell\WhoLocks` and directly runs
-`wholocks-gui.exe "%1"`. Administrator privileges are not required.
+Alternatively, use the built-in CLI command:
 
-Right-click one file or folder and choose **Show more options > WhoLocks**.
-The window shows one row per locking PID, with `End Task` on each row and
-`End All Tasks` in the top-right. Termination always asks for confirmation.
+```powershell
+.\target\release\wholocks.exe --install-context-menu
+```
 
-The registration points to the current release directory. Do not move or delete
-the two executables after installing the menu. To remove the menu:
+This adds the following per-user registry entry and does not require administrator privileges:
+
+```text
+HKCU\Software\Classes\AllFilesystemObjects\shell\WhoLocks
+```
+
+> [!IMPORTANT]
+> The registration points to the current location of **`wholocks-gui.exe`**. Do not move or delete the release executables after registering the context menu.
+
+To remove the source-installed context-menu command, run either:
 
 ```powershell
 .\scripts\uninstall-shell-verb.ps1
 ```
 
-The equivalent built-in commands are `wholocks.exe --install-context-menu` and
-`wholocks.exe --uninstall-context-menu`.
-
-You can also open the UI directly:
-
 ```powershell
-.\target\release\wholocks-gui.exe "C:\path\to\some-file.txt"
+.\target\release\wholocks.exe --uninstall-context-menu
 ```
 
-To check one file instead of an entire folder:
+If you used the setup program, uninstall **WhoLocks** through Windows **Installed apps** instead.
 
-```powershell
-.\target\release\wholocks.exe "C:\path\to\some-file.txt"
-```
+## Administrator access
 
-## Terminate locking processes
+A normal scan is intentionally performed without elevation. Windows may prevent WhoLocks from inspecting handles owned by protected or higher-privilege processes.
 
-First scan the path and inspect the output. To force-close every distinct process
-found holding that path, use `--kill`:
+If the expected process is missing, select **Retry as administrator** in the application and approve the Windows User Account Control prompt. Elevated access improves visibility, but some system-protected processes may still be inaccessible.
 
-```powershell
-cargo run -- --kill "C:\Users\HExCR\Documents\Prog\Svelte\auth-system"
-```
+## How it works
 
-Or with the release executable:
+WhoLocks enumerates Windows system handles, safely duplicates candidate handles for inspection, filters them to disk-backed handles, and compares their native device paths with the selected file or folder. Folder scans also match handles to files and subfolders beneath the selected directory.
 
-```powershell
-.\target\release\wholocks.exe --kill "C:\Users\HExCR\Documents\Prog\Svelte\auth-system"
-```
+The application excludes its own process from scan results. Normal scans are **read-only and non-destructive**; a process is terminated only after an explicit GUI confirmation or use of the CLI **`--kill`** option.
 
-`--kill` terminates processes immediately. They do not get a chance to save
-unsaved work or clean up. It may close your editor, terminal, development server,
-or File Explorer, so use it only after checking the scan output.
+## Support
 
-## Access limitations
-
-Windows can hide handles belonging to protected processes. If a scan shows no
-matching process while Windows still says the item is in use, open PowerShell as
-Administrator and run the same command again.
+Found a bug or have a feature request? [Open an issue](https://github.com/HexCore99/wholocks/issues).

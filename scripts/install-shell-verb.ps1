@@ -22,8 +22,16 @@ $verbKey = "HKCU:\Software\Classes\AllFilesystemObjects\shell\WhoLocks"
 $commandKey = Join-Path $verbKey "command"
 New-Item -Path $commandKey -Force | Out-Null
 Set-Item -LiteralPath $verbKey -Value "WhoLocks"
-New-ItemProperty -LiteralPath $verbKey -Name "Icon" -Value $executable -PropertyType String -Force | Out-Null
+New-ItemProperty -LiteralPath $verbKey -Name "Icon" -Value ('"{0}",0' -f $executable) -PropertyType String -Force | Out-Null
 Set-Item -LiteralPath $commandKey -Value ('"{0}" "%1"' -f $executable)
+
+if (-not ("WhoLocks.ShellNotifications" -as [type])) {
+    Add-Type -Namespace WhoLocks -Name ShellNotifications -MemberDefinition @'
+        [System.Runtime.InteropServices.DllImport("shell32.dll")]
+        public static extern void SHChangeNotify(int eventId, uint flags, System.IntPtr item1, System.IntPtr item2);
+'@
+}
+[WhoLocks.ShellNotifications]::SHChangeNotify(0x08000000, 0, [IntPtr]::Zero, [IntPtr]::Zero)
 
 Write-Host "Installed WhoLocks for files and folders."
 Write-Host "Command: `"$executable`" `"%1`""

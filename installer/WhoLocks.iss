@@ -1,5 +1,5 @@
 #ifndef MyAppVersion
-  #define MyAppVersion "0.9.2"
+  #define MyAppVersion "0.9.3"
 #endif
 
 #define MyAppName "WhoLocks"
@@ -46,7 +46,7 @@ Name: "{autoprograms}\WhoLocks"; Filename: "{app}\{#MyAppExeName}"
 
 [Registry]
 Root: HKCU; Subkey: "Software\Classes\AllFilesystemObjects\shell\WhoLocks"; ValueType: string; ValueName: ""; ValueData: "WhoLocks"; Flags: uninsdeletekey
-Root: HKCU; Subkey: "Software\Classes\AllFilesystemObjects\shell\WhoLocks"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName}"
+Root: HKCU; Subkey: "Software\Classes\AllFilesystemObjects\shell\WhoLocks"; ValueType: string; ValueName: "Icon"; ValueData: """{app}\{#MyAppExeName}"",0"
 Root: HKCU; Subkey: "Software\Classes\AllFilesystemObjects\shell\WhoLocks\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
 [Run]

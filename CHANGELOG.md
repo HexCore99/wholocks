@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.3
+
+- Fixed the context-menu icon registration to quote the executable path and explicitly select its first icon.
+- Refreshed the Windows shell icon cache when registering or removing the context menu through the CLI, and when registering through the PowerShell script.
+- The installer applies the icon registration automatically and refreshes shell associations on installation.
+
 ## 0.9.2
 
 - Added the purple file-and-keyhole logo as the Windows application icon.

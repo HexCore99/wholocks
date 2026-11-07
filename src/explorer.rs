@@ -1,12 +1,32 @@
 use std::{
     env,
-    ffi::OsStr,
+    ffi::{OsStr, c_void},
     io,
     path::{Path, PathBuf},
     process::{Command, Output},
 };
 
 const MENU_TEXT: &str = "WhoLocks";
+const SHCNE_ASSOCCHANGED: i32 = 0x0800_0000;
+const SHCNF_IDLIST: u32 = 0;
+
+#[link(name = "shell32")]
+unsafe extern "system" {
+    fn SHChangeNotify(event_id: i32, flags: u32, item1: *const c_void, item2: *const c_void);
+}
+
+fn refresh_shell() {
+    // Association changes invalidate the shell's cached menu icons.
+    unsafe {
+        SHChangeNotify(
+            SHCNE_ASSOCCHANGED,
+            SHCNF_IDLIST,
+            std::ptr::null(),
+            std::ptr::null(),
+        );
+    }
+}
+
 const MENU_KEY: &str = r"HKCU\Software\Classes\AllFilesystemObjects\shell\WhoLocks";
 const LEGACY_MENU_KEYS: [&str; 6] = [
     r"HKCU\Software\Classes\*\shell\WhoLocks",
@@ -67,7 +87,7 @@ fn gui_executable() -> io::Result<PathBuf> {
 }
 
 fn register_key(key: &str, gui: &Path) -> io::Result<()> {
-    let icon = gui.to_string_lossy();
+    let icon = format!(r#""{}",0"#, gui.display());
     let command = format!(r#""{}" "%1""#, gui.display());
     add_value(key, None, MENU_TEXT)?;
     add_value(key, Some("Icon"), &icon)?;
@@ -89,6 +109,7 @@ pub fn install_context_menu() -> io::Result<PathBuf> {
         delete_key(key)?;
     }
     register_key(MENU_KEY, &gui)?;
+    refresh_shell();
     Ok(gui)
 }
 
@@ -96,5 +117,6 @@ pub fn uninstall_context_menu() -> io::Result<()> {
     for key in std::iter::once(MENU_KEY).chain(LEGACY_MENU_KEYS) {
         delete_key(key)?;
     }
+    refresh_shell();
     Ok(())
 }

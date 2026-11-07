@@ -71,6 +71,8 @@ jobs:
           $notes = @"
           ## WhoLocks $env:APP_VERSION
 
+          Optimized Windows release build with thin link-time optimization and a single code-generation unit.
+
           Download **WhoLocks-Setup-v$env:APP_VERSION.exe** and run it. The installer:
 
           - installs WhoLocks for the current Windows user;

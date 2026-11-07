@@ -1,5 +1,5 @@
 #ifndef MyAppVersion
-  #define MyAppVersion "0.9.1"
+  #define MyAppVersion "0.9.2"
 #endif
 
 #define MyAppName "WhoLocks"
@@ -26,6 +26,7 @@ OutputBaseFilename=WhoLocks-Setup-v{#MyAppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\assets\wholocks.ico
 ChangesAssociations=yes
 CloseApplications=force
 RestartApplications=no

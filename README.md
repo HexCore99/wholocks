@@ -18,7 +18,7 @@ WhoLocks is a lightweight Windows utility that scans open file-system handles an
 
 ### 1. Install WhoLocks
 
-Download **`WhoLocks-Setup-v0.9.1.exe`** from the [latest GitHub release](https://github.com/HexCore99/wholocks/releases/latest), then run the installer.
+Download **`WhoLocks-Setup-v0.9.2.exe`** from the [latest GitHub release](https://github.com/HexCore99/wholocks/releases/latest), then run the installer.
 
 **The installation is per-user and does not require administrator privileges.** Windows SmartScreen may display a warning because the installer is not code-signed.
 
